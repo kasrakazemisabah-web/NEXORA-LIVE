@@ -3,9 +3,8 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NEXORA LIVE</title>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
@@ -15,16 +14,15 @@ body{
  margin:0;
  background:#080812;
  color:white;
- font-family:Tahoma,Arial,sans-serif;
+ font-family:Tahoma,Arial;
  text-align:center;
  min-height:100vh;
 }
 
 header{
- padding:24px 15px;
+ padding:24px;
  background:#111124;
  border-bottom:1px solid #853cff;
- box-shadow:0 0 20px #792cff33;
 }
 
 .logo{
@@ -34,8 +32,6 @@ header{
 }
 
 .logo span{color:#00d9ff}
-
-header p{color:#aaa}
 
 main{
  max-width:440px;
@@ -62,14 +58,11 @@ input{
  background:#090916;
  color:white;
  font-size:15px;
- outline:none;
 }
-
-input:focus{border-color:#a855f7}
 
 button{
  width:100%;
- padding:15px;
+ padding:14px;
  margin-top:12px;
  border:0;
  border-radius:9px;
@@ -80,15 +73,17 @@ button{
  cursor:pointer;
 }
 
-button:disabled{
- opacity:.5;
- cursor:not-allowed;
+button:disabled{opacity:.5}
+
+.secondary{
+ background:#25253d;
+ border:1px solid #8654bd;
 }
 
 .switch{
  color:#00d9ff;
  cursor:pointer;
- margin-top:22px;
+ margin-top:20px;
 }
 
 #msg{
@@ -101,11 +96,30 @@ button:disabled{
 #account{display:none}
 
 footer{
- margin-top:35px;
+ margin:30px 15px;
+ padding:20px 10px;
  color:#777;
  font-size:12px;
+ line-height:2;
+ border-top:1px solid #29203d;
 }
 
+.creator{
+ color:#a855f7;
+ font-weight:bold;
+ font-size:13px;
+ text-shadow:0 0 10px #a855f766;
+}
+
+@media(max-width:480px){
+ main{
+  margin:25px auto;
+  padding:12px;
+ }
+ header{padding:20px}
+ .logo{font-size:28px}
+ .card{padding:20px}
+}
 </style>
 </head>
 
@@ -119,64 +133,50 @@ footer{
 <main>
 
 <div class="card" id="auth">
-
  <h2 id="title">ساخت حساب کاربری</h2>
 
- <input id="displayName"
- placeholder="نام نمایشی">
+ <input id="displayName" placeholder="نام نمایشی">
+ <input id="username" placeholder="نام کاربری">
+ <input id="email" type="email" placeholder="ایمیل">
+ <input id="password" type="password" placeholder="رمز عبور (حداقل ۶ کاراکتر)">
 
- <input id="username"
- placeholder="نام کاربری">
+ <button id="action" onclick="submitAuth()">ثبت نام</button>
 
- <input id="email"
- type="email"
- placeholder="ایمیل">
-
- <input id="password"
- type="password"
- placeholder="رمز عبور (حداقل ۶ کاراکتر)">
-
- <button id="action" onclick="submitAuth()">
- ثبت نام
+ <button class="secondary" onclick="resendEmail()">
+ ارسال مجدد ایمیل تأیید
  </button>
 
- <div class="switch"
- onclick="toggleMode()"
- id="switch">
+ <div class="switch" onclick="toggleMode()" id="switch">
  قبلاً حساب ساخته‌ام | ورود
  </div>
 
  <p id="msg"></p>
-
 </div>
 
 <div class="card" id="account">
-
  <h2>به NEXORA LIVE خوش آمدی!</h2>
-
  <p id="welcome"></p>
-
- <button onclick="logout()">
- خروج از حساب
- </button>
-
+ <button onclick="logout()">خروج از حساب</button>
 </div>
 
 <footer>
  NEXORA LIVE © 2026
+ <br>
+ <span class="creator">
+ Created by Kasra Kazemi 💜
+ </span>
 </footer>
 
 </main>
 
 <script>
-
 const SUPABASE_URL =
 'https://vpaendrlgltucjvayjcr.supabase.co';
 
 const SUPABASE_KEY =
 'sb_publishable_ebelTlrDPzeqZKQpUqWE_g_VB0SGC1c';
 
-const db = window.supabase.createClient(
+const db=window.supabase.createClient(
  SUPABASE_URL,
  SUPABASE_KEY,
  {
@@ -188,6 +188,7 @@ const db = window.supabase.createClient(
  }
 );
 
+const redirectURL=window.location.origin+'/';
 let isLogin=false;
 
 function message(text){
@@ -195,7 +196,6 @@ function message(text){
 }
 
 function toggleMode(){
-
  isLogin=!isLogin;
 
  document.getElementById('title').textContent=
@@ -205,9 +205,7 @@ function toggleMode(){
  isLogin?'ورود':'ثبت نام';
 
  document.getElementById('switch').textContent=
- isLogin
- ?'حساب ندارم | ثبت نام'
- :'قبلاً حساب ساخته‌ام | ورود';
+ isLogin?'حساب ندارم | ثبت نام':'قبلاً حساب ساخته‌ام | ورود';
 
  document.getElementById('displayName').style.display=
  isLogin?'none':'block';
@@ -219,15 +217,10 @@ function toggleMode(){
 }
 
 async function submitAuth(){
-
  const email=document.getElementById('email').value.trim();
-
  const password=document.getElementById('password').value;
-
  const username=document.getElementById('username').value.trim().toLowerCase();
-
- const display_name=
- document.getElementById('displayName').value.trim()||username;
+ const display_name=document.getElementById('displayName').value.trim()||username;
 
  if(!email||!password){
   message('ایمیل و رمز عبور را وارد کن.');
@@ -245,39 +238,24 @@ async function submitAuth(){
  }
 
  const btn=document.getElementById('action');
-
  btn.disabled=true;
  btn.textContent='لطفاً صبر کن...';
 
  try{
-
   let result;
 
   if(isLogin){
-
    result=await db.auth.signInWithPassword({
-    email:email,
-    password:password
+    email,password
    });
-
   }else{
-
    result=await db.auth.signUp({
-
-    email:email,
-    password:password,
-
+    email,password,
     options:{
-     emailRedirectTo:window.location.origin+'/',
-
-     data:{
-      username:username,
-      display_name:display_name
-     }
+     emailRedirectTo:redirectURL,
+     data:{username,display_name}
     }
-
    });
-
   }
 
   if(result.error){
@@ -286,55 +264,70 @@ async function submitAuth(){
   }
 
   if(isLogin){
-
-   message('ورود موفق بود!');
-
    showAccount(result.data.user);
-
+   message('ورود موفق بود!');
+  }else if(result.data.session){
+   showAccount(result.data.user);
+   message('ثبت نام موفق بود!');
   }else{
-
-   if(result.data.session){
-    showAccount(result.data.user);
-    message('ثبت نام موفق بود!');
-   }else{
-    message('ثبت نام انجام شد! ایمیلت را باز کن و لینک تأیید را بزن.');
-   }
-
+   message('ثبت نام انجام شد! ایمیلت را بررسی کن.');
   }
 
  }catch(error){
-
-  message('خطا در ارتباط: '+error.message);
-
+  message(error.message);
  }finally{
-
   btn.disabled=false;
   btn.textContent=isLogin?'ورود':'ثبت نام';
+ }
+}
 
+async function resendEmail(){
+ const email=document.getElementById('email').value.trim();
+
+ if(!email){
+  message('اول ایمیلت را وارد کن.');
+  return;
  }
 
+ const btn=document.querySelector('.secondary');
+ btn.disabled=true;
+ btn.textContent='در حال ارسال...';
+
+ try{
+  const {error}=await db.auth.resend({
+   type:'signup',
+   email:email,
+   options:{
+    emailRedirectTo:redirectURL
+   }
+  });
+
+  if(error){
+   message(error.message);
+  }else{
+   message('درخواست ارسال ایمیل ثبت شد. صندوق ورودی و پوشه Spam را بررسی کن.');
+  }
+ }catch(error){
+  message(error.message);
+ }finally{
+  btn.disabled=false;
+  btn.textContent='ارسال مجدد ایمیل تأیید';
+ }
 }
 
 function showAccount(user){
-
  if(!user)return;
 
  document.getElementById('auth').style.display='none';
-
  document.getElementById('account').style.display='block';
 
- const name=
- user.user_metadata?.display_name||
- user.user_metadata?.username||
- user.email;
+ const name=user.user_metadata?.display_name||
+ user.user_metadata?.username||user.email;
 
- document.getElementById('welcome').textContent=
- 'سلام '+name+' 👋';
-
+ document.getElementById('welcome').textContent='سلام '+name+' 👋';
 }
 
 async function logout(){
-
  const {error}=await db.auth.signOut();
 
  if(error){
@@ -343,61 +336,35 @@ async function logout(){
  }
 
  document.getElementById('account').style.display='none';
-
  document.getElementById('auth').style.display='block';
-
  document.getElementById('password').value='';
-
  message('با موفقیت خارج شدی.');
-
 }
 
 async function initialize(){
-
- const hash=window.location.hash;
-
- if(hash.includes('error=')){
-
-  const params=new URLSearchParams(hash.substring(1));
-
-  const errorCode=params.get('error_code');
-
-  if(errorCode==='otp_expired'){
-   message('لینک تأیید منقضی شده. دوباره ثبت نام یا درخواست لینک جدید کن.');
-  }else{
-   message(params.get('error_description')||'خطا در تأیید ایمیل.');
-  }
-
-  history.replaceState(null,'',window.location.pathname);
-
- }
-
  const {data,error}=await db.auth.getSession();
 
  if(error){
-  message('خطا در دریافت حساب کاربری.');
+  message(error.message);
   return;
  }
 
  if(data.session){
   showAccount(data.session.user);
  }
-
 }
 
 db.auth.onAuthStateChange((event,session)=>{
-
  if(session?.user){
   showAccount(session.user);
  }
-
 });
 
 initialize();
-
 </script>
 
 </body>
 </html>
+
 
 
