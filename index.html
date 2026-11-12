@@ -1,1 +1,113 @@
 
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NEXORA LIVE</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#080811;color:#fff;font-family:Tahoma,Arial}
+header{padding:20px 6%;background:#111126;border-bottom:1px solid #39275f;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.logo{font-size:25px;font-weight:bold;color:#fff}.logo span{color:#22d3ee}
+main{max-width:1000px;margin:auto;padding:25px 16px}
+.hero,.panel,.card{background:#15142a;border:1px solid #39275f;border-radius:18px;padding:22px;margin-bottom:18px}
+.hero{background:linear-gradient(120deg,#31145a,#11182e)}
+h1{font-size:clamp(27px,5vw,44px)}
+p{color:#c6c3dc;line-height:2}
+button{background:linear-gradient(90deg,#9b5cff,#555cff);color:white;border:0;border-radius:10px;padding:12px 18px;font-weight:bold;cursor:pointer;margin:4px}
+input{display:block;width:100%;padding:13px;margin:9px 0 15px;background:#090916;border:1px solid #494268;border-radius:9px;color:white}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px}
+small{color:#aaa}
+#status{color:#22d3ee;line-height:2}
+</style>
+</head>
+<body>
+<header>
+<div class="logo">NEXORA <span>LIVE</span></div>
+<button id="authButton">ورود / ثبت‌نام</button>
+</header>
+<main>
+<section class="hero">
+<h1>دنیای استریم گیمینگ!</h1>
+<p>بازی کن، استریم کن و دیده شو. به NEXORA LIVE خوش آمدی.</p>
+<button onclick="document.getElementById('studio').scrollIntoView({behavior:'smooth'})">ساخت کانال</button>
+</section>
+
+<section class="panel" id="auth">
+<h2>حساب کاربری</h2>
+<input id="displayName" placeholder="نام نمایشی">
+<input id="username" placeholder="نام کاربری انگلیسی">
+<input id="email" type="email" placeholder="ایمیل">
+<input id="password" type="password" placeholder="رمز عبور">
+<button onclick="signup()">ثبت‌نام</button>
+<button onclick="login()">ورود</button>
+<button onclick="logout()">خروج</button>
+<p id="status">برای شروع ثبت‌نام یا ورود کن.</p>
+</section>
+
+<h2>استریم‌های زنده</h2>
+<div class="grid" id="streams"></div>
+
+<section class="panel" id="studio">
+<h2>پنل استریمر</h2>
+<input id="streamTitle" placeholder="عنوان استریم">
+<input id="category" placeholder="دسته‌بندی بازی">
+<button onclick="createStream()">ثبت کانال</button>
+<p>پخش واقعی تصویر و صدا در مرحله بعد اضافه می‌شود.</p>
+</section>
+</main>
+
+<script>
+const URL="https://vpaendrlgltucjvayjcr.supabase.co";
+const KEY="sb_publishable_ebelTlrDPzeqZKQpUqWE_g_VB0SGC1c";
+const db=window.supabase.createClient(URL,KEY);
+const $=id=>document.getElementById(id);
+function msg(t){$('status').textContent=t}
+
+async function signup(){
+let email=$('email').value.trim(),password=$('password').value;
+let username=$('username').value.trim().toLowerCase();
+let display_name=$('displayName').value.trim()||username;
+if(!email||password.length<6||!username){msg('ایمیل، نام کاربری و رمز حداقل ۶ کاراکتری را وارد کن.');return}
+if(!/^[a-z0-9_]{3,24}$/.test(username)){msg('نام کاربری باید ۳ تا ۲۴ حرف انگلیسی، عدد یا _ باشد.');return}
+msg('در حال ثبت‌نام...');
+let {data,error}=await db.auth.signUp({email,password,options:{data:{username,display_name}}});
+if(error){msg(error.message);return}
+msg(data.session?'ثبت‌نام موفق بود!':'حساب ساخته شد؛ ایمیلت را برای تأیید بررسی کن.');
+loadStreams();
+}
+async function login(){
+let {error}=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});
+msg(error?error.message:'با موفقیت وارد شدی!');
+}
+async function logout(){
+let {error}=await db.auth.signOut();msg(error?'خطا در خروج': 'از حساب خارج شدی.');
+}
+async function createStream(){
+let {data:{user}}=await db.auth.getUser();
+if(!user){msg('اول وارد حساب کاربری شو.');return}
+let title=$('streamTitle').value.trim();
+if(!title){msg('عنوان استریم را وارد کن.');return}
+let {error}=await db.from('streams').insert({streamer_id:user.id,title,category:$('category').value.trim()||'Gaming',status:'offline'});
+msg(error?error.message:'کانال با موفقیت ثبت شد!');
+loadStreams();
+}
+async function loadStreams(){
+let {data,error}=await db.from('streams').select('title,category,status').order('created_at',{ascending:false}).limit(30);
+let area=$('streams');area.innerHTML='';
+if(error){area.textContent='خطا در دریافت استریم‌ها';return}
+if(!data.length){area.innerHTML='<div class="card">هنوز استریمی ثبت نشده است.</div>';return}
+data.forEach(s=>{
+let card=document.createElement('div');card.className='card';
+let h=document.createElement('h3');h.textContent=s.title;
+let p=document.createElement('p');p.textContent=s.category+' | '+(s.status==='live'?'🔴 زنده':'آفلاین');
+card.append(h,p);area.append(card);
+});
+}
+$('authButton').onclick=()=>$('auth').scrollIntoView({behavior:'smooth'});
+loadStreams();
+</script>
+</body>
+</html>
